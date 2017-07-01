@@ -165,6 +165,17 @@ class MyTestSuite extends FunSuite {
     assert(math.abs(ll1 - ll2) < 0.1)
   }
 
+  test("Thinnable Stream") {
+    import Thinnable.ops._
+    val s = Stream.iterate(0)(_ + 1).
+      drop(10).
+      thin(2).
+      take(5).
+      toArray
+    assert(s(2) == 15)
+  }
+
+
 }
 
 // eof

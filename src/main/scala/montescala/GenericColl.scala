@@ -27,7 +27,7 @@ object TypeClasses {
     def length[A](ca: C[A]): Int
   }
 
-  import GenericColl.ops._
+  // import GenericColl.ops._
 
   // Instance for Vector
   implicit val vGC: GenericColl[Vector] = new GenericColl[Vector] {
@@ -48,6 +48,26 @@ object TypeClasses {
   }
 
   // TODO: Implementation for Spark RDDs - in another project
+
+
+  // Add a .thin method to Stream
+
+  // First define a Thinnable typeclass
+  @typeclass
+  trait Thinnable[F[_]] {
+    def thin[T](f: F[T], th: Int): F[T]
+  }
+
+  // A thinnable instance for Stream
+  implicit val streamThinnable: Thinnable[Stream] =
+    new Thinnable[Stream] {
+      def thin[T](s: Stream[T],th: Int): Stream[T] = {
+        val ss = s.drop(th-1)
+        if (ss.isEmpty) Stream.empty else
+          ss.head #:: thin(ss.tail, th)
+      }
+    }
+
 
 }
 
