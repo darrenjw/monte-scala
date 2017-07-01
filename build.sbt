@@ -3,7 +3,8 @@ name := "Monte Scala"
 version := "0.1-SNAPSHOT"
 
 scalacOptions ++= Seq(
-  "-unchecked", "-deprecation", "-feature", "-language:higherKinds"
+  "-unchecked", "-deprecation", "-feature",
+  "-language:higherKinds", "-language:implicitConversions"
 )
 
 libraryDependencies  ++= Seq(

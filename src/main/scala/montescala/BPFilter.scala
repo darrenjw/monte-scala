@@ -9,7 +9,7 @@ package montescala
 
 import scala.collection.GenTraversable
 import TypeClasses._
-
+import GenericColl.ops._
 
 object BPFilter {
 

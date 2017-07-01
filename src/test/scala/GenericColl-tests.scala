@@ -12,6 +12,7 @@ import org.scalatest.junit._
 import org.junit.runner.RunWith
 
 import TypeClasses._
+import GenericColl.ops._
 import BPFilter._
 
 @RunWith(classOf[JUnitRunner])
