@@ -11,6 +11,8 @@ import org.scalatest._
 import org.scalatest.junit._
 import org.junit.runner.RunWith
 
+import scala.collection.parallel.immutable.ParVector
+
 import TypeClasses._
 import GenericColl.ops._
 import BPFilter._
@@ -102,7 +104,10 @@ class MyTestSuite extends FunSuite {
     implicit val dState = new State[Double] {}
     implicit val dObs = new Observation[Double] {}
     val p1 = Gaussian(0.0, 10.0).sample(100000).toVector
-    val p2 = update((s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o), (s: Double) => Gaussian(s, 1.0).draw)(p1, 5.0)
+    val p2 = update((s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (s: Double) => Gaussian(s, 1.0).draw,
+      (zc: Vector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l)
+    )(p1, 5.0)
     assert(p2._2.length > 90000)
   }
 
@@ -111,7 +116,11 @@ class MyTestSuite extends FunSuite {
     implicit val dState = new State[Double] {}
     implicit val dObs = new Observation[Double] {}
     val p1 = Gaussian(0.0, 10.0).sample(100000).toVector.par
-    val p2 = update((s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o), (s: Double) => Gaussian(s, 1.0).draw)(p1, 5.0)
+    val p2 = update(
+      (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (s: Double) => Gaussian(s, 1.0).draw,
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l)
+    )(p1, 5.0)
     assert(p2._2.length > 90000)
   }
 
@@ -120,7 +129,13 @@ class MyTestSuite extends FunSuite {
     implicit val dState = new State[Double] {}
     implicit val dObs = new Observation[Double] {}
     val p1 = Gaussian(0.0, 10.0).sample(100000).toVector
-    val pn = pFilter(p1, List(2.0, 2.0, 3.0, 4.0), (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o), (s: Double) => Gaussian(s, 1.0).draw)
+    val pn = pFilter(
+      p1,
+      List(2.0, 2.0, 3.0, 4.0),
+      (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (s: Double) => Gaussian(s, 1.0).draw,
+      (zc: Vector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l)
+    )
     assert(pn._2.length > 90000)
   }
 
@@ -129,7 +144,13 @@ class MyTestSuite extends FunSuite {
     implicit val dState = new State[Double] {}
     implicit val dObs = new Observation[Double] {}
     val p1 = Gaussian(0.0, 10.0).sample(100000).toVector.par
-    val pn = pFilter(p1, List(2.0, 2.0, 3.0, 4.0), (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o), (s: Double) => Gaussian(s, 1.0).draw)
+    val pn = pFilter(
+      p1,
+      List(2.0, 2.0, 3.0, 4.0),
+      (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (s: Double) => Gaussian(s, 1.0).draw,
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l)
+    )
     assert(pn._2.length > 90000)
   }
 
@@ -142,6 +163,7 @@ class MyTestSuite extends FunSuite {
       (th: Double) => Gaussian(0.0, 10.0).sample(100000).toVector,
       (th: Double) => (s: Double) => Gaussian(s, 1.0).draw,
       (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (zc: Vector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l),
       List(2.0, 2.0, 3.0, 4.0)
     )
     val ll1 = mll(1.0)
@@ -158,6 +180,7 @@ class MyTestSuite extends FunSuite {
       (th: Double) => Gaussian(0.0, 10.0).sample(100000).toVector.par,
       (th: Double) => (s: Double) => Gaussian(s, 1.0).draw,
       (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l),
       List(2.0, 2.0, 3.0, 4.0)
     )
     val ll1 = mll(1.0)

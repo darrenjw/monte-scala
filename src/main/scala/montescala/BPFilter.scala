@@ -15,9 +15,12 @@ object BPFilter {
 
   // Single step of a bootstrap particle filter
   def update[S: State, O: Observation, C[_]: GenericColl](
-    dataLik: (S, O) => LogLik, stepFun: S => S
-  )(x: C[S], o: O): (LogLik, C[S]) = {
-    import breeze.stats.distributions.Poisson
+    dataLik: (S, O) => LogLik,
+    stepFun: S => S,
+    resample: (C[(Double, S)], Double, Int) => C[S]
+  )(
+    x: C[S], o: O): (LogLik, C[S]
+  ) = {
     val xp = x map (stepFun(_))
     val lw = xp map (dataLik(_, o))
     val max = lw reduce (math.max(_, _))
@@ -25,16 +28,25 @@ object BPFilter {
     val srw = rw reduce (_ + _)
     val l = rw.length
     val z = rw zip xp
-    val rx = z flatMap { case (rwi, xpi) => 
-      Vector.fill(Poisson(rwi * l / srw).draw)(xpi) }
+    val rx = resample(z, srw, l)
     (max + math.log(srw / l), rx)
+  }
+
+  def resamplePoisson[S: State, C[_]: GenericColl](zc: C[(Double,S)], srw: Double, l: Int): C[S] = {
+    import breeze.stats.distributions.Poisson
+    zc flatMap { case (rwi, xpi) =>
+      Vector.fill(Poisson(rwi * l / srw).draw)(xpi) }
   }
 
   // Run a bootstrap particle filter over a collection of observations
   def pFilter[S: State, O: Observation, C[_]: GenericColl, D[O] <: GenTraversable[O]](
-    x0: C[S], data: D[O], dataLik: (S, O) => LogLik, stepFun: S => S
+    x0: C[S],
+    data: D[O],
+    dataLik: (S, O) => LogLik,
+    stepFun: S => S,
+    resample: (C[(Double, S)], Double, Int) => C[S]
   ): (LogLik, C[S]) = {
-    val updater = update[S, O, C](dataLik, stepFun) _
+    val updater = update[S, O, C](dataLik, stepFun, resample) _
     data.foldLeft((0.0, x0))((prev, o) => {
       val (oll, ox) = prev
       val (ll, x) = updater(ox, o)
@@ -44,8 +56,12 @@ object BPFilter {
 
   // Marginal log likelihood estimation
   def pfMll[S: State, P: Parameter, O: Observation, C[_]: GenericColl, D[O] <: GenTraversable[O]](
-    simX0: P => C[S], stepFun: P => S => S, dataLik: P => (S, O) => LogLik, data: D[O]
-  ): (P => LogLik) = (th: P) => pFilter(simX0(th), data, dataLik(th), stepFun(th))._1
+    simX0: P => C[S],
+    stepFun: P => S => S,
+    dataLik: P => (S, O) => LogLik,
+    resample: (C[(Double, S)], Double, Int) => C[S],
+    data: D[O]
+  ): (P => LogLik) = (th: P) => pFilter(simX0(th), data, dataLik(th), stepFun(th), resample)._1
 
   // Main method
   def main(args: Array[String]): Unit = {
@@ -84,10 +100,12 @@ object Examples {
     implicit val dState = new State[Double] {}
     implicit val dObs = new Observation[Double] {}
     implicit val dPar = new Parameter[Double] {}
+    import scala.collection.parallel.immutable.ParVector
     val mll = pfMll(
       (th: Double) => Gaussian(0.0, 10.0).sample(10000).toVector.par,
       (th: Double) => (s: Double) => Gaussian(th * s, 1.0).draw,
       (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l),
       data
     )
     val x = linspace(0.0, 0.99, 100)
