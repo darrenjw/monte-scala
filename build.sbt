@@ -8,6 +8,7 @@ scalacOptions ++= Seq(
 
 libraryDependencies  ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+  "org.typelevel" %% "cats" % "0.9.0",
   "com.github.darrenjw" %% "scala-glm" % "0.3"
 )
 
