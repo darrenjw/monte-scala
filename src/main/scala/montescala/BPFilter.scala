@@ -32,6 +32,7 @@ object BPFilter {
     (max + math.log(srw / l), rx)
   }
 
+  // Simple Poisson resampling - unstable for long time series
   def resamplePoisson[S: State, C[_]: GenericColl](zc: C[(Double,S)], srw: Double, l: Int): C[S] = {
     import breeze.stats.distributions.Poisson
     zc flatMap { case (rwi, xpi) =>
