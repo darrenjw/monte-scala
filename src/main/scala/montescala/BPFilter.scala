@@ -33,11 +33,37 @@ object BPFilter {
   }
 
   // Simple Poisson resampling - unstable for long time series
-  def resamplePoisson[S: State, C[_]: GenericColl](zc: C[(Double,S)], srw: Double, l: Int): C[S] = {
+  def resamplePoisson[S: State, C[_]: GenericColl](
+    zc: C[(Double,S)],
+    srw: Double,
+    l: Int
+  ): C[S] = {
     import breeze.stats.distributions.Poisson
     zc flatMap { case (rwi, xpi) =>
       Vector.fill(Poisson(rwi * l / srw).draw)(xpi) }
   }
+
+  // Multinomial resampling - serial implemetation for now
+  // TODO: Replace with a parallel implementation
+  def resampleMN[S: State, C[_]: GenericColl](
+    zc: C[(Double,S)],
+    srw: Double,
+    l: Int
+  ): C[S] = {
+    import breeze.stats.distributions.Binomial
+    val w = zc map {case (rwi, xpi) => rwi}
+    val x = zc map {case (rwi, xpi) => xpi}
+    val counts =  w.scanLeft((l, srw))((p, w) =>
+      (if (p._1 > 0) p._1 - Binomial(p._1, w / p._2).draw else 0,
+        p._2 - w)).
+      drop(1).
+      scanLeft((l, 0))((a, b) => (b._1, a._1 - b._1)).
+      drop(1).
+      map(_._2)
+    val cx = counts zip x
+    cx flatMap {case (ci, xi) => Vector.fill(ci)(xi)}
+  }
+
 
   // Run a bootstrap particle filter over a collection of observations
   def pFilter[S: State, O: Observation, C[_]: GenericColl, D[O] <: GenTraversable[O]](
@@ -62,7 +88,11 @@ object BPFilter {
     dataLik: P => (S, O) => LogLik,
     resample: (C[(Double, S)], Double, Int) => C[S],
     data: D[O]
-  ): (P => LogLik) = (th: P) => pFilter(simX0(th), data, dataLik(th), stepFun(th), resample)._1
+  ): (P => LogLik) =
+    (th: P) =>
+  pFilter(simX0(th), data, dataLik(th), stepFun(th), resample)._1
+
+
 
   // Main method
   def main(args: Array[String]): Unit = {
@@ -106,7 +136,7 @@ object Examples {
       (th: Double) => Gaussian(0.0, 10.0).sample(10000).toVector.par,
       (th: Double) => (s: Double) => Gaussian(th * s, 1.0).draw,
       (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
-      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l),
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resampleMN(zc,srw,l),
       data
     )
     val x = linspace(0.0, 0.99, 100)

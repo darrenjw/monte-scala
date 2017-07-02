@@ -124,6 +124,19 @@ class MyTestSuite extends FunSuite {
     assert(p2._2.length > 90000)
   }
 
+  test("ParVector update test (resampleMN)") {
+    import breeze.stats.distributions.Gaussian
+    implicit val dState = new State[Double] {}
+    implicit val dObs = new Observation[Double] {}
+    val p1 = Gaussian(0.0, 10.0).sample(100000).toVector.par
+    val p2 = update(
+      (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (s: Double) => Gaussian(s, 1.0).draw,
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resampleMN(zc,srw,l)
+    )(p1, 5.0)
+    assert(p2._2.length == 100000)
+  }
+
   test("Vector pFilter test") {
     import breeze.stats.distributions.Gaussian
     implicit val dState = new State[Double] {}
@@ -137,6 +150,21 @@ class MyTestSuite extends FunSuite {
       (zc: Vector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l)
     )
     assert(pn._2.length > 90000)
+  }
+
+  test("Vector pFilter test (resampleMN)") {
+    import breeze.stats.distributions.Gaussian
+    implicit val dState = new State[Double] {}
+    implicit val dObs = new Observation[Double] {}
+    val p1 = Gaussian(0.0, 10.0).sample(100000).toVector
+    val pn = pFilter(
+      p1,
+      List(2.0, 2.0, 3.0, 4.0),
+      (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (s: Double) => Gaussian(s, 1.0).draw,
+      (zc: Vector[(Double, Double)], srw: Double, l: Int) => resampleMN(zc,srw,l)
+    )
+    assert(pn._2.length == 100000)
   }
 
   test("ParVector pFilter test") {
@@ -185,6 +213,47 @@ class MyTestSuite extends FunSuite {
     )
     val ll1 = mll(1.0)
     val ll2 = mll(2.0)
+    assert(math.abs(ll1 - ll2) < 0.1)
+  }
+
+  test("ParVector pfMll test (resampleMN)") {
+    import breeze.stats.distributions.Gaussian
+    implicit val dState = new State[Double] {}
+    implicit val dObs = new Observation[Double] {}
+    implicit val dPar = new Parameter[Double] {}
+    val mll = pfMll(
+      (th: Double) => Gaussian(0.0, 10.0).sample(100000).toVector.par,
+      (th: Double) => (s: Double) => Gaussian(s, 1.0).draw,
+      (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resampleMN(zc,srw,l),
+      List(2.0, 2.0, 3.0, 4.0)
+    )
+    val ll1 = mll(1.0)
+    val ll2 = mll(2.0)
+    assert(math.abs(ll1 - ll2) < 0.1)
+  }
+
+  test("ParVector pfMll resamplePoisson and resampleMN cross-check") {
+    import breeze.stats.distributions.Gaussian
+    implicit val dState = new State[Double] {}
+    implicit val dObs = new Observation[Double] {}
+    implicit val dPar = new Parameter[Double] {}
+    val mll1 = pfMll(
+      (th: Double) => Gaussian(0.0, 10.0).sample(100000).toVector.par,
+      (th: Double) => (s: Double) => Gaussian(s, 1.0).draw,
+      (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resamplePoisson(zc,srw,l),
+      List(2.0, 2.0, 3.0, 4.0)
+    )
+    val mll2 = pfMll(
+      (th: Double) => Gaussian(0.0, 10.0).sample(100000).toVector.par,
+      (th: Double) => (s: Double) => Gaussian(s, 1.0).draw,
+      (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resampleMN(zc,srw,l),
+      List(2.0, 2.0, 3.0, 4.0)
+    )
+    val ll1 = mll1(1.0)
+    val ll2 = mll2(1.0)
     assert(math.abs(ll1 - ll2) < 0.1)
   }
 

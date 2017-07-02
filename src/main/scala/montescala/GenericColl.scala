@@ -20,7 +20,7 @@ object TypeClasses {
   trait Observation[T]
   trait Parameter[T]
 
-  // My generic collection typeclass
+  // Generic collection typeclass
   @typeclass trait GenericColl[C[_]] {
     def map[A, B](ca: C[A])(f: A => B): C[B]
     def flatMap[A, B, D[B] <: GenTraversable[B]](ca: C[A])(f: A => D[B]): C[B]
@@ -28,7 +28,8 @@ object TypeClasses {
     def scan[A](ca: C[A])(z: A)(f: (A, A) => A): C[A]
     def zip[A, B](ca: C[A])(cb: C[B]): C[(A, B)]
     def length[A](ca: C[A]): Int
-    // some fundamentally sequential methods
+    def drop[A](ca: C[A])(n: Int): C[A]
+    // include some fundamentally sequential methods
     def foldLeft[A,B](ca: C[A])(z: B)(f: (B, A) => B): B
     def scanLeft[A,B](ca: C[A])(z: B)(f: (B, A) => B): C[B]
   }
@@ -43,6 +44,7 @@ object TypeClasses {
     def scan[A](ca: Vector[A])(z: A)(f: (A, A) => A): Vector[A] = ca.scan(z)(f)
     def zip[A, B](ca: Vector[A])(cb: Vector[B]): Vector[(A, B)] = ca zip cb
     def length[A](ca: Vector[A]) = ca.length
+    def drop[A](ca: Vector[A])(n: Int): Vector[A] = ca drop n
     def foldLeft[A,B](ca: Vector[A])(z: B)(f: (B, A) => B): B = ca.foldLeft(z)(f)
     def scanLeft[A,B](ca: Vector[A])(z: B)(f: (B, A) => B): Vector[B] = ca.scanLeft(z)(f)
   }
@@ -55,6 +57,7 @@ object TypeClasses {
     def scan[A](ca: ParVector[A])(z: A)(f: (A, A) => A): ParVector[A] = ca.scan(z)(f)
     def zip[A, B](ca: ParVector[A])(cb: ParVector[B]): ParVector[(A, B)] = ca zip cb
     def length[A](ca: ParVector[A]) = ca.length
+    def drop[A](ca: ParVector[A])(n: Int): ParVector[A] = ca drop n
     def foldLeft[A,B](ca: ParVector[A])(z: B)(f: (B, A) => B): B = ca.foldLeft(z)(f)
     def scanLeft[A,B](ca: ParVector[A])(z: B)(f: (B, A) => B): ParVector[B] = ca.scanLeft(z)(f)
   }
