@@ -23,9 +23,9 @@ object TypeClasses {
   // My generic collection typeclass
   @typeclass trait GenericColl[C[_]] {
     def map[A, B](ca: C[A])(f: A => B): C[B]
+    def flatMap[A, B, D[B] <: GenTraversable[B]](ca: C[A])(f: A => D[B]): C[B]
     def reduce[A](ca: C[A])(f: (A, A) => A): A
     def scan[A](ca: C[A])(z: A)(f: (A, A) => A): C[A]
-    def flatMap[A, B, D[B] <: GenTraversable[B]](ca: C[A])(f: A => D[B]): C[B]
     def zip[A, B](ca: C[A])(cb: C[B]): C[(A, B)]
     def length[A](ca: C[A]): Int
   }

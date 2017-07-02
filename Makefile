@@ -9,7 +9,7 @@ docs: FORCE
 	git add docs/api
 
 edit:
-	emacs src/main/scala/montescala/*.scala src/test/scala/*.scala &
+	emacs src/main/scala/montescala/*.scala src/test/scala/*.scala build.sbt README.md &
 
 
 
