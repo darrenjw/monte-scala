@@ -1,5 +1,5 @@
-name := "Monte Scala"
-
+name := "monte-scala"
+organization := "com.github.darrenjw"
 version := "0.1-SNAPSHOT"
 
 scalacOptions ++= Seq(
@@ -21,8 +21,11 @@ resolvers ++= Seq(
 )
 
 scalaVersion := "2.12.1"
+crossScalaVersions := Seq("2.11.11","2.12.1")
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+publishTo := Some(Resolver.sftp("Personal mvn repo", "unix.ncl.ac.uk", "/home/ucs/100/ndjw1/public_html/mvn"))
 
 
 
