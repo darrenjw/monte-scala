@@ -46,7 +46,7 @@ object BPFExample {
       (th: Double) => Gaussian(0.0, 10.0).sample(10000).toVector.par,
       (th: Double) => (s: Double) => Gaussian(th * s, 1.0).draw,
       (th: Double) => (s: Double, o: Double) => Gaussian(s, 2.0).logPdf(o),
-      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resampleMN(zc,srw,l),
+      (zc: ParVector[(Double, Double)], srw: Double, l: Int) => resampleSys(zc,srw,l),
       data
     )
     val x = linspace(0.0, 0.99, 100)

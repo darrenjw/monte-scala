@@ -29,6 +29,7 @@ object TypeClasses {
     def zip[A, B](ca: C[A])(cb: C[B]): C[(A, B)]
     def length[A](ca: C[A]): Int
     def drop[A](ca: C[A])(n: Int): C[A]
+    def take[A](ca: C[A])(n: Int): C[A]
     // include some fundamentally sequential methods
     def foldLeft[A,B](ca: C[A])(z: B)(f: (B, A) => B): B
     def scanLeft[A,B](ca: C[A])(z: B)(f: (B, A) => B): C[B]
@@ -45,6 +46,7 @@ object TypeClasses {
     def zip[A, B](ca: Vector[A])(cb: Vector[B]): Vector[(A, B)] = ca zip cb
     def length[A](ca: Vector[A]) = ca.length
     def drop[A](ca: Vector[A])(n: Int): Vector[A] = ca drop n
+    def take[A](ca: Vector[A])(n: Int): Vector[A] = ca take n
     def foldLeft[A,B](ca: Vector[A])(z: B)(f: (B, A) => B): B = ca.foldLeft(z)(f)
     def scanLeft[A,B](ca: Vector[A])(z: B)(f: (B, A) => B): Vector[B] = ca.scanLeft(z)(f)
   }
@@ -58,6 +60,7 @@ object TypeClasses {
     def zip[A, B](ca: ParVector[A])(cb: ParVector[B]): ParVector[(A, B)] = ca zip cb
     def length[A](ca: ParVector[A]) = ca.length
     def drop[A](ca: ParVector[A])(n: Int): ParVector[A] = ca drop n
+    def take[A](ca: ParVector[A])(n: Int): ParVector[A] = ca take n
     def foldLeft[A,B](ca: ParVector[A])(z: B)(f: (B, A) => B): B = ca.foldLeft(z)(f)
     def scanLeft[A,B](ca: ParVector[A])(z: B)(f: (B, A) => B): ParVector[B] = ca.scanLeft(z)(f)
   }

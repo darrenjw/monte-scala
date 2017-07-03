@@ -64,6 +64,33 @@ object BPFilter {
     cx flatMap {case (ci, xi) => Vector.fill(ci)(xi)}
   }
 
+  // Systematic resampling
+  def resampleSys[S: State, C[_]: GenericColl](
+    zc: C[(Double,S)],
+    srw: Double,
+    l: Int
+  ): C[S] = {
+    val w = zc map {case (rwi, xpi) => rwi}
+    val x = zc map {case (rwi, xpi) => xpi}
+    val W = w.scan(0.0)(_+_)
+    val rw = W map (_ * (l.toDouble / srw))
+    import breeze.stats.distributions.Uniform
+    val u = Uniform(0,1).draw
+    val cumCount = rw map (x => {
+      val f = math.floor(x).toInt
+      if (u < x-f) (f+1) else f
+    })
+    val counts = diff(cumCount)
+    val cx = counts zip x
+    cx flatMap {case (ci, xi) => Vector.fill(ci)(xi)}
+  }
+
+  import spire.math._
+  import spire.implicits._
+  def diff[T: Numeric,C[_]: GenericColl](c: C[T]): C[T] = {
+    val z = c zip (c drop 1)
+    z map {case (c,cd) => cd - c}
+  }
 
   // Run a bootstrap particle filter over a collection of observations
   def pFilter[S: State, O: Observation, C[_]: GenericColl, D[O] <: GenTraversable[O]](
