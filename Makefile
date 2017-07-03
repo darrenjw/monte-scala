@@ -9,7 +9,16 @@ docs: FORCE
 	git add docs/api
 
 edit:
-	emacs src/main/scala/montescala/*.scala src/test/scala/*.scala build.sbt README.md &
+	emacs build.sbt README.md Makefile src/test/scala/*.scala src/main/scala/montescala/*.scala &
+
+commit:
+	git commit -a
+	git push
+	make update
+
+update:
+	git pull
+	git log | less 
 
 
-
+# eof
