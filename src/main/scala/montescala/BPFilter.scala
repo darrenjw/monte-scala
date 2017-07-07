@@ -32,6 +32,10 @@ object BPFilter {
     (max + math.log(srw / l), rx)
   }
 
+  // TODO: rethink pre-computation and signature of resample - eg. don't zip...
+
+  // TODO: switch stepFun to pure version with Rand monad
+
   // Simple Poisson resampling - unstable for long time series
   def resamplePoisson[S: State, C[_]: GenericColl](
     zc: C[(Double,S)],
